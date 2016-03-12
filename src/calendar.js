@@ -1,5 +1,4 @@
-;
-(function(c) {
+;(function(c) {
     if (typeof module === 'object' && typeof require === 'function') {
         module.exports.calendar = c;
     } else {
@@ -9,19 +8,7 @@
 
     var hasOwnProperty = Object.hasOwnProperty,
         calendarId = 'bjiang' + (new Date()).getTime(),
-        nativeForEach = Array.prototype.forEach,	
         slice = Array.prototype.slice;
-
-    function each(obj, callback, context) {
-        if (!obj) return;
-        if (typeof obj.forEach === 'function' && obj.forEach === nativeForEach) {
-            obj.forEach(callback);
-        } else if (+obj.length === obj.length) {
-            for (var i = 0, len = obj.length; i < len; i++) {
-                callback(obj, obj[i], i, context);
-            }
-        }
-    }
 
     // get the first day of the month
     function getFirstDayOfMonth(year, month) {
@@ -45,36 +32,36 @@
 
     function formatMonth(year, month) {
         var month = month < 10 ? '0' + month : month;
-        return year + '-' + month;
+        return year + '年-' + month + '月';
     }
 
     function EventList() {
-    	this.events = {};
+        this.events = {};
 
-    	this.subscribe = function(event, fn) {
-    		this.events[event] = [];
-    		this.events[event].push(fn);
-    		return this;
-    	};
+        this.subscribe = function(event, fn) {
+            this.events[event] = [];
+            this.events[event].push(fn);
+            return this;
+        };
 
-    	this.unsubscribe = function(event) {
-    		var events = this.events;
-    		if (event in events !== false) {
-    			delete events[event];
-    		}
-    		return this;
-    	};
+        this.unsubscribe = function(event) {
+            var events = this.events;
+            if (event in events !== false) {
+                delete events[event];
+            }
+            return this;
+        };
 
-    	this.publish = function(event) {
-    		var events = this.events,
-    				args = slice.call(arguments, 1);
-    		if (event in events !== false) {
-    			for (var i = 0, len = events[event].length; i < len; i++) {
-    				events[event][i].apply(this, args);
-    			}
-    		}
-    		return this;
-    	}
+        this.publish = function(event) {
+            var events = this.events,
+                args = slice.call(arguments, 1);
+            if (event in events !== false) {
+                for (var i = 0, len = events[event].length; i < len; i++) {
+                    events[event][i].apply(this, args);
+                }
+            }
+            return this;
+        }
     }
 
     function $(id) {
@@ -86,7 +73,38 @@
     }
 
     function Calendar() {
-    		var now = new Date();
+        var now = new Date();
+        var defaults = { year: now.getFullYear(), month: now.getMonth() + 1 };
+        var self = this;
+        var _initEvent = function() {
+            function next() {
+                defaults.month = defaults.month + 1;
+                if (defaults.month == 13) {
+                    defaults.month = 1;
+                    defaults.year += 1;
+                }
+                self.publish('next', defaults.year, defaults.month);
+            };
+
+            function pre() {
+                defaults.month = defaults.month - 1;
+                if(defaults.month == 0) {
+                    defaults.month = 12;
+                    defaults.year -= 1;
+                }
+                self.publish('pre', defaults.year, defaults.month);
+            };
+            self.subscribe('pre', function(year, month) {
+                self.init({ year, month })
+            });
+            self.subscribe('next', function(year, month) {
+                self.init({ year, month })
+            });
+
+            $class('.pre')[0].addEventListener('click', pre, false);
+            $class('.next')[0].addEventListener('click', next, false);
+        };  
+
         this.drawCalendar = function(year, month) {
             var html = '<div class="calendar">',
                 firstDay = getFirstDayOfMonth(year, month),
@@ -123,44 +141,28 @@
                 html += '<div class="day last-day">' + i + '</div>';
             }
 
-            html += '</div>'
+            html += '</div>';
             return html;
         };
 
-        this.init = function(options) {
-            var container = document.createElement('div');
-            container.setAttribute('id', calendarId);
-            container.innerHTML = this.drawCalendar(options.year, options.month);
+        this.init = function() {
+            var container = document.getElementById(calendarId);
+            if (container) {
+                document.body.removeChild(container);
+            } else {
+                container = document.createElement('div');
+                container.setAttribute('id', calendarId);
+            }
+            container.innerHTML = this.drawCalendar(defaults.year, defaults.month);
             document.body.appendChild(container);
+            _initEvent();
         };
     }
 
+    EventList.call(Calendar.prototype);
+
     return function() {
-        var calendar = new Calendar();
-        var now = new Date();
-        var defaults = { year: now.getFullYear(), month: now.getMonth() };
-
-        EventList.call(calendar);
-        calendar.init(defaults);
-
-        var pre = $class('.pre')[0];
-        var next = $class('.next')[0];
-        
-        calendar.subscribe('pre', function(year, month) {
-        	calendar.init({year, month})
-        });
-        calendar.subscribe('next', function(year, month) {
-        	calendar.init({year, month})
-        });
-
-        pre.addEventListener('click', function() {
-        	defaults.month = defaults.month - 1;
-        	calendar.publish('pre', defaults.year, defaults.month);
-        }, false);
-        next.addEventListener('click', function() {
-        	defaults.month = defaults.month + 1;
-        	calendar.publish('pre', defaults.year, defaults.month);
-        }, false);
+        calendar =  new Calendar();
+        calendar.init();
     }
-
 }());
