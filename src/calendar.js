@@ -1,5 +1,4 @@
-;
-(function(c) {
+;(function(c) {
     if (typeof module === 'object' && typeof require === 'function') {
         module.exports.calendar = c;
     } else {
