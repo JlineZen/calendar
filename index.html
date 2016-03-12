@@ -11,16 +11,48 @@
 			overflow: hidden;
 			box-shadow: 3px 3px 3px #e2e2e2;
 		}
+		.last-day {
+			color: #999;
+		}
 		.column {
 			width: 252px;
 			overflow: hidden;
 		}
+		.column .pre {
+			padding-left: 15px;
+		}
+		.column .next, .column .pre {
+			color: #666;
+			font-weight: 600;
+			width: 60px;
+			float: left;
+			font-size: 20px; 
+			cursor: pointer;
+		}
+		.column .next {
+			text-align: right;
+			padding-right: 15px: 
+		}
+		.column .date {
+			color: red;
+			width: 100px;
+			text-align: center;
+			float: left;
+			font-size: 16px;
+		}
 		.day {
 			width: 36px;
-			height: 24px;
+			height: 36px;
 			float: left;
-			line-height: 24px;
+			line-height: 36px;
 			text-align: center;
+			border-radius: 50%;
+			-webkit-border-radius: 50%;
+			-moz-border-radius: 50%;
+		}
+		.day-now {
+			color: #fff;
+			background-color: lightgreen;
 		}
 	</style>
 </head>
