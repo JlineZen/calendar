@@ -9,7 +9,7 @@ so if you have any feedbacks, I am glad to accept.
 
 first, you should import the style and js files on the page.
 
-```<!DOCTYPE html>
+```html
 <html>
 <head>
 	<link rel="stylesheet" type="text/css" href="assets/calendar.css">
@@ -35,13 +35,13 @@ var calendar = new Calendar();
 ```
 
 ## init method options
-1.format
-	format: 'YY/MM/DD', default fomation is like '2016/03/13'
-	format: 'YY-MM-DD', '2016-03-13'
-	formate 'MM-DD-YY', '03-2016-13'
+- format
+	+ format: 'YY/MM/DD', default fomation is like '2016/03/13'
+	+ format: 'YY-MM-DD', '2016-03-13'
+	+ formate 'MM-DD-YY', '03-2016-13'
 
-2.target: pure javascript dom element on your page.
+- target: pure javascript dom element on your page.
 
-3 onselect: callback once your have select a date on the calendar.
+- onselect: callback once your have select a date on the calendar.
 
 
