@@ -4,11 +4,26 @@
 	<meta charset="UTF-8">
 	<link rel="stylesheet" type="text/css" href="assets/calendar.css">
 	<title>Calendar</title>
+	<style type="text/css">
+		#date {
+			margin-left: 100px;
+			margin-top: 50px;
+		}
+	</style>
 </head>
 <body>
+	<input type="text" id="date" placeholder="date" />
 	<script type="text/javascript" src="src/calendar.js"></script>
 	<script type="text/javascript">
-		calendar();
+		var calendar = new Calendar();
+		var dateField = document.getElementById('date');
+		calendar.init({
+			format: 'YY-MM-DD',
+			target: dateField,
+			onselect: function(date) {
+				dateField.value = date;
+			}
+		});
 	</script>
 </body>
 </html>
