@@ -1,13 +1,13 @@
 ;(function(c) {
     if (typeof module === 'object' && typeof require === 'function') {
-        module.exports.calendar = c;
+        module.exports.Calendar = c;
     } else {
-        this.calendar = c;
+        this.Calendar = c;
     }
 })(function() {
 
     var hasOwnProperty = Object.hasOwnProperty,
-        calendarId = 'bjiang' + (new Date()).getTime(),
+        calendarId = 'bjiang-date-picker',
         slice = Array.prototype.slice;
 
     // get the first day of the month
@@ -15,24 +15,45 @@
         return new Date(year, month - 1, 1).getDay();
     }
 
-
     // get the length of month
     function getLengthOfMonth(year, month) {
         return new Date(year, month, 0).getDate();
     }
 
-    function extend(target, source) {
-        for (var key in source) {
-            if (hasOwnProperty.call(source, key)) {
-                target[key] = source[key];
+    function each(obj, callback, context) {
+        if (!obj) return;
+        if (typeof obj.forEach === 'function' && obj.forEach === Array.prototype.forEach) {
+            obj.forEach(callback);
+        } else if (+obj.length === obj.length) {
+            for (var i = 0, len = obj.length; i < len; i++) {
+                callback.call(context, obj[i], i, obj);
             }
         }
-        return target;
     }
 
+    function hasClass(elem, clsName)  {
+        return elem.className.split(' ').indexOf(clsName) > -1 ? true : false;
+    }
+ 
     function formatMonth(year, month) {
         var month = month < 10 ? '0' + month : month;
-        return year + '年-' + month + '月';
+        return '<span id="bj-calendar-year">' + year + '</span>年-' +
+               '<span id="bj-calendar-month">' + month + '</span>月';
+    }
+
+    function getCssStyle(elem, prop) {
+        if (elem.currentStyle) {
+            return elem.currentStyle[prop];
+        } else if (window.getComputedStyle) {
+            return document.defaultView.getComputedStyle(elem, null)[prop];
+        }
+    }
+
+    function getPostion(elem) {
+        return {
+            top: elem.offsetTop,
+            left: elem.offsetLeft
+        }
     }
 
     function EventList() {
@@ -76,7 +97,8 @@
         var now = new Date();
         var defaults = { year: now.getFullYear(), month: now.getMonth() + 1 };
         var self = this;
-        var _initEvent = function() {
+        var _initEvent = function(options) {
+            var day = $class('.day');
             function next() {
                 defaults.month = defaults.month + 1;
                 if (defaults.month == 13) {
@@ -94,16 +116,80 @@
                 }
                 self.publish('pre', defaults.year, defaults.month);
             };
+
             self.subscribe('pre', function(year, month) {
                 self.init({ year, month })
             });
             self.subscribe('next', function(year, month) {
                 self.init({ year, month })
             });
+            self.subscribe('print', function(year, month, date) {
+                var day;
+                if (options.format.toUpperCase() === 'YY-MM-DD') {
+                    var day = year + '-' + month + '-' + date;
+                } else if (options.formate.toUpperCase() === 'MM-YY-DD') {
+                    var day = month + '-' + year + '-' + date;
+                } else {
+                    day = year + '/' + month + '/' + date;
+                }
+                options.onselect.call(this, day);
+            });
 
-            $class('.pre')[0].addEventListener('click', pre, false);
-            $class('.next')[0].addEventListener('click', next, false);
-        };  
+            $('bj-calendar-previous').addEventListener('click', pre, false);
+            $('bj-calendar-next').addEventListener('click', next, false);
+            each(day, function(elem, index) {
+                elem.addEventListener('click', function() {
+                    var year = $('bj-calendar-year').textContent,
+                        month = $('bj-calendar-month').textContent,
+                        date = parseInt(elem.textContent, 10) < 10 ? '0' + elem.textContent :
+                               elem.textContent;
+                    if (hasClass(elem, 'last-day')) {
+                        self.publish('print', year, month - 1, date);
+                    }
+                    if (hasClass(elem, 'month-day')) {
+                        self.publish('print', year, month, date);
+                    }
+                    if (hasClass(elem, 'next-day')) {
+                        self.publish('print', year, month + 1, date);
+                    }
+                    self.publish('hide');
+                }, false);
+            }, this);
+        }; 
+
+        var _initPosition = function(options) {
+            if (!options.target || typeof options.target !== 'object' ) return;
+            var target = options.target,
+                pos = getPostion(target),
+                height = getCssStyle(target, 'height');
+            
+            target.addEventListener('focus', function() {
+                this.value = '';
+                self.publish('set', {
+                    top: parseInt(pos.top, 10) + parseInt(height, 10) + 20,
+                    left: parseInt(pos.left, 10)
+                });
+                self.publish('show');
+            }, false);
+        }; 
+
+        var _setPosition = function(options) {
+            var target = options.target,
+                container = document.getElementById(calendarId);
+            if (!target || typeof target !== 'object' || !container) return;
+            self.subscribe('set', function(pos) {
+                container.style.left = pos.left + 'px';
+                container.style.top = pos.top + 'px';
+            });
+            
+            self.subscribe('show', function() {
+                container.style.display = 'block';
+            });
+
+            self.subscribe('hide', function() {
+                container.style.display = 'none';
+            });
+        };
 
         this.drawCalendar = function(year, month) {
             var html = '<div class="calendar">',
@@ -114,9 +200,9 @@
                 i;
 
             html += '<div class="column">';
-            html += '<div class="pre"><</div>'
+            html += '<div id="bj-calendar-previous" class="pre"><</div>'
             html += '<div class="date">' + formatMonth(year, month) + '</div>';
-            html += '<div class="next">></div>';
+            html += '<div id="bj-calendar-next" class="next">></div>';
             html += '</div>';
             html += '<div class="column">';
 
@@ -130,22 +216,22 @@
 
             for (i = 1; i < dayLength + 1; i++) {
                 if (i == now.getDate()) {
-                    html += '<div class="day day-now">' + i + '</div>'
+                    html += '<div class="day day-now month-day">' + i + '</div>'
                 } else {
-                    html += '<div class="day">' + i + '</div>';
+                    html += '<div class="day month-day">' + i + '</div>';
                 }
 
             }
 
             for (i = 1; i < 8 - (dayLength + firstDay) % 7; i++) {
-                html += '<div class="day last-day">' + i + '</div>';
+                html += '<div class="day next-day">' + i + '</div>';
             }
 
             html += '</div>';
             return html;
         };
 
-        this.init = function() {
+        this.init = function(options) {
             var container = document.getElementById(calendarId);
             if (container) {
                 document.body.removeChild(container);
@@ -155,14 +241,13 @@
             }
             container.innerHTML = this.drawCalendar(defaults.year, defaults.month);
             document.body.appendChild(container);
-            _initEvent();
+            _initEvent(options);
+            _initPosition(options);
+            _setPosition(options);
         };
     }
 
     EventList.call(Calendar.prototype);
 
-    return function() {
-        calendar =  new Calendar();
-        calendar.init();
-    }
+    return Calendar;
 }());
