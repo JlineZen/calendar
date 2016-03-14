@@ -17,21 +17,22 @@ first, you should import the style and js files on the page.
 	<title></title>
 </head>
 <body>
-
+	<input type="text" id="date" placeholder="input your date" />	
 </body>
 </html>
 ```
 
 ```javascript
+dateField = document.getElementById('date');
 var calendar = new Calendar();
-		var dateField = document.getElementById('date');
-		calendar.init({
-			format: 'YY-MM-DD',
-			target: dateField,
-			onselect: function(date) {
-				dateField.value = date;
-			}
-		});
+var dateField = document.getElementById('date');
+calendar.init({
+	format: 'YY-MM-DD',
+	target: dateField,
+	onselect: function(date) {
+		dateField.value = date;
+	}
+});
 ```
 
 ## init method options
