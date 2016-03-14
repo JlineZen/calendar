@@ -23,7 +23,6 @@ first, you should import the style and js files on the page.
 ```
 
 ```javascript
-dateField = document.getElementById('date');
 var calendar = new Calendar();
 var dateField = document.getElementById('date');
 calendar.init({
