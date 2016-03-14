@@ -43,7 +43,7 @@ calendar.init({
 - **Target**:  
 	pure javascript dom element on your page.
 
-- Onselect:  
+- **Onselect**:  
 	callback once your have select a date on the calendar.
 
 
