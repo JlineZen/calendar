@@ -31,14 +31,25 @@
         }
     }
 
+    function extend(target, source) {
+        for (var key in source) {
+            if (hasOwnProperty.call(source, key)) {
+                target[key] = source[key];
+            }
+        }
+
+        return target;
+    }
+
     function hasClass(elem, clsName)  {
         return elem.className.split(' ').indexOf(clsName) > -1 ? true : false;
     }
  
     function formatMonth(year, month) {
-        var month = month < 10 ? '0' + month : month;
+        var month = month.toString().replace(/0/, '');
+        var mon = parseInt(month, 10) < 10 ? ('0' + month) : month;
         return '<span id="bj-calendar-year">' + year + '</span>年-' +
-               '<span id="bj-calendar-month">' + month + '</span>月';
+               '<span id="bj-calendar-month">' + mon + '</span>月';
     }
 
     function getCssStyle(elem, prop) {
@@ -100,39 +111,44 @@
         var _initEvent = function(options) {
             var day = $class('.day');
             function next() {
-                defaults.month = defaults.month + 1;
+                var option;
+                defaults.month = parseInt(defaults.month, 10) + 1;
                 if (defaults.month == 13) {
                     defaults.month = 1;
                     defaults.year += 1;
                 }
-                self.publish('next', defaults.year, defaults.month);
+                option = extend(defaults, options);
+                self.publish('next', option);
             };
 
             function pre() {
-                defaults.month = defaults.month - 1;
+                var option;
+                defaults.month = parseInt(defaults.month, 10) - 1;
                 if(defaults.month == 0) {
                     defaults.month = 12;
                     defaults.year -= 1;
                 }
-                self.publish('pre', defaults.year, defaults.month);
+                option = extend(defaults, options);
+                self.publish('pre', option);
             };
 
-            self.subscribe('pre', function(year, month) {
-                self.init({ year, month })
+            self.subscribe('pre', function(option) {
+                self.init(option);
             });
-            self.subscribe('next', function(year, month) {
-                self.init({ year, month })
+            self.subscribe('next', function(option) {
+                self.init(option);
             });
-            self.subscribe('print', function(year, month, date) {
+            self.subscribe('print', function(option) {
                 var day;
-                if (options.format.toUpperCase() === 'YY-MM-DD') {
-                    var day = year + '-' + month + '-' + date;
-                } else if (options.formate.toUpperCase() === 'MM-YY-DD') {
-                    var day = month + '-' + year + '-' + date;
+
+                if (option.format.toUpperCase() === 'YY-MM-DD') {
+                    var day = option.year + '-' + option.month + '-' + option.date;
+                } else if (option.formate.toUpperCase() === 'MM-YY-DD') {
+                    var day = option.month + '-' + option.year + '-' + option.date;
                 } else {
-                    day = year + '/' + month + '/' + date;
+                    day = option.year + '/' + option.month + '/' + option.date;
                 }
-                options.onselect.call(this, day);
+                option.onselect.call(this, day);
             });
 
             $('bj-calendar-previous').addEventListener('click', pre, false);
@@ -142,15 +158,16 @@
                     var year = $('bj-calendar-year').textContent,
                         month = $('bj-calendar-month').textContent,
                         date = parseInt(elem.textContent, 10) < 10 ? '0' + elem.textContent :
-                               elem.textContent;
+                               elem.textContent,
+                        option = extend(options, {year: year, month: month, date: date})
                     if (hasClass(elem, 'last-day')) {
-                        self.publish('print', year, month - 1, date);
+                        self.publish('print', option);
                     }
                     if (hasClass(elem, 'month-day')) {
-                        self.publish('print', year, month, date);
+                        self.publish('print', option);
                     }
                     if (hasClass(elem, 'next-day')) {
-                        self.publish('print', year, month + 1, date);
+                        self.publish('print', option);
                     }
                     self.publish('hide');
                 }, false);
